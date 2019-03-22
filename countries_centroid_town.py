@@ -2,9 +2,7 @@ import pandas as pd
 from scipy.spatial import ConvexHull
 import matplotlib.pyplot as plt
 import numpy as np
-
-fig = plt.figure()
-ax = fig.add_subplot(111, projection='3d')
+from mpl_toolkits import mplot3d
 
 
 class CountryCentroid:
@@ -25,10 +23,11 @@ class CountryCentroid:
         return df.pd.read_pickle('points.pkl')
 
     def set_country(self, country_id):
-        return self.df[
-            (self.df['Country'] == country_id) &
-            pd.notnull(self.df['Population'])
+        cntry_df = self.df[
+            self.df['Country'] == country_id
             ][['Latitude', 'Longitude']]
+
+        setattr(self, 'df', cntry_df)
 
     def project_to_equirectangular(self):
         """
@@ -77,6 +76,27 @@ class CountryCentroid:
         )
         return self.df[['X', 'Y', 'Z']].values
 
+    def plot_country(self, mode='2d'):
+        if mode == '2d':
+            cntry = self.project_to_equirectangular()
+            plt.plot(
+                cntry[:, 0],
+                cntry[:, 1],
+                'o'
+            )
+        else:
+            fig = plt.figure()
+            ax = fig.add_subplot(111, projection='3d')
+            cntry = self.project_to_cartesian()
+            ax.scatter(
+                cntry[:, 0],
+                cntry[:, 1],
+                cntry[:, 2],
+                c=cntry[:, 2],
+                linewidth=1
+            )
+        plt.show()
+
     def make_convex_hull(self, mode='2d'):
         if mode == '2d':
             return ConvexHull(self.df[['X', 'Y']].values)
@@ -86,6 +106,5 @@ class CountryCentroid:
 
 if __name__ == '__main__':
     cc = CountryCentroid('world-cities-database.zip')
-    x, y, z = cc.project_to_cartesian()
-    ax.scatter(x, y, z, c=y, linewidth=1)
-    plt.show()
+    cc.set_country(country_id='cz')
+    cc.plot_country()
