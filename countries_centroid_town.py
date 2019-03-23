@@ -7,9 +7,16 @@ from scipy import stats
 
 
 class CountryCentroid:
-    def __init__(self, csv_file):
+    def __init__(self, csv_file, cntry_id, min_pop=0, _3d=False):
         self.csv = csv_file
         self.df = self.load_df()
+        self.set_country(cntry_id)
+        self.set_min_population(min_pop=min_pop)
+        if not _3d:
+            self.points = self.project_to_equirectangular()
+        else:
+            self.points = self.project_to_cartesian()
+        self.vertices = None
 
     def load_df(self):
         return pd.read_csv(
@@ -122,32 +129,38 @@ class CountryCentroid:
                 c=cntry[:, 2],
                 linewidth=1
             )
-        plt.show()
 
-    def make_convex_hull(self, mode='2d'):
-        if mode == '2d':
-            return ConvexHull(self.df[['X', 'Y']].values)
-        else:
-            return ConvexHull(self.df[['X', 'Y', 'Z']].values)
+    def scatter_towns(self):
+        plt.plot(self.points[:, 0], self.points[:, 1], 'o')
 
-    def get_simplices(self):
-        return self.make_convex_hull().simplices
 
-    def plot_convex_hull(self):
-        points = self.project_to_equirectangular()
-        plt.plot(points[:, 0], points[:, 1], 'o')
-        simplices = self.get_simplices()
+    def make_convex_hull(self):
+        return ConvexHull(self.points)
 
-        for simplex in simplices:
-            plt.plot(points[simplex, 0], points[simplex, 1], 'k-')
+    def set_vertices(self):
+        setattr(self, 'vertices', self.make_convex_hull().vertices)
 
-        plt.show()
+    def plot_convex_layer(self):
+        plt.plot(self.points[self.vertices, 0], self.points[self.vertices, 1], 'r--', lw=1)
+
+    def peel_outer_convex_layer(self):
+        self.points = np.delete(self.points, self.vertices.tolist(), 0)
+        self.set_vertices()
+
+    def peel(self):
+        self.plot_convex_layer()
+        while self.points.shape[0] > 2:
+            try:
+                self.peel_outer_convex_layer()
+                self.plot_convex_layer()
+            except ValueError:
+                break
 
 
 if __name__ == '__main__':
-    cc = CountryCentroid('world-cities-database.zip')
-    cc.set_country(country_id='ir')
-    cc.set_min_population(min_pop=500)
+    cc = CountryCentroid('world-cities-database.zip', cntry_id='ir', min_pop=10)
     cc.remove_outliers_by_zscore()
-    cc.plot_country(mode='2d')
-    cc.plot_convex_hull()
+    cc.scatter_towns()
+    cc.set_vertices()
+    cc.peel()
+    plt.show()
