@@ -98,7 +98,9 @@ class CountryCentroid:
 
     def remove_outliers_by_zscore(self):
         self.df = self.df[
-            (np.abs(stats.zscore(self.df[['Longitude', 'Latitude']])) < 3).all(axis=1)
+            (np.abs(
+                stats.zscore(self.df[['Longitude', 'Latitude']])
+            ) < 3).all(axis=1)
         ]
 
     def plot_country(self, mode='2d'):
@@ -128,11 +130,24 @@ class CountryCentroid:
         else:
             return ConvexHull(self.df[['X', 'Y', 'Z']].values)
 
+    def get_simplices(self):
+        return self.make_convex_hull().simplices
+
+    def plot_convex_hull(self):
+        points = self.project_to_equirectangular()
+        plt.plot(points[:, 0], points[:, 1], 'o')
+        simplices = self.get_simplices()
+
+        for simplex in simplices:
+            plt.plot(points[simplex, 0], points[simplex, 1], 'k-')
+
+        plt.show()
+
 
 if __name__ == '__main__':
     cc = CountryCentroid('world-cities-database.zip')
     cc.set_country(country_id='ir')
-    cc.set_min_population(min_pop=10000)
+    cc.set_min_population(min_pop=500)
     cc.remove_outliers_by_zscore()
     cc.plot_country(mode='2d')
-
+    cc.plot_convex_hull()
