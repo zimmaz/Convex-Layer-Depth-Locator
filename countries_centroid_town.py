@@ -25,9 +25,17 @@ class CountryCentroid:
     def set_country(self, country_id):
         cntry_df = self.df[
             self.df['Country'] == country_id
-            ][['Latitude', 'Longitude']]
+            ]
 
         setattr(self, 'df', cntry_df)
+
+    def set_min_population(self, min_pop):
+        pop_df = self.df[
+            (self.df['Population'] >= min_pop) &
+            pd.notnull(self.df['Population'])
+            ]
+
+        setattr(self, 'df', pop_df)
 
     def project_to_equirectangular(self):
         """
@@ -107,4 +115,5 @@ class CountryCentroid:
 if __name__ == '__main__':
     cc = CountryCentroid('world-cities-database.zip')
     cc.set_country(country_id='cz')
-    cc.plot_country()
+    cc.set_min_population(min_pop=10000)
+    cc.plot_country(mode='3d')
