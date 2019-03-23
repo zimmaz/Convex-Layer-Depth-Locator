@@ -3,6 +3,7 @@ from scipy.spatial import ConvexHull
 import matplotlib.pyplot as plt
 import numpy as np
 from mpl_toolkits import mplot3d
+from scipy import stats
 
 
 class CountryCentroid:
@@ -58,6 +59,16 @@ class CountryCentroid:
         )
         return self.df[['X', 'Y']].values
 
+    def convert_deg_to_radian(self):
+        self.df['Longitude'] = self.df.apply(
+            lambda row: np.radians(row['Longitude']),
+            axis=1
+        )
+        self.df['Latitude'] = self.df.apply(
+            lambda row: np.radians(row['Latitude']),
+            axis=1
+        )
+
     def project_to_cartesian(self):
         """
         x = R * cos(lat) * cos(lon)
@@ -67,6 +78,7 @@ class CountryCentroid:
         :return:
         """
         earth_r = 6371
+        self.convert_deg_to_radian()
 
         self.df['X'] = self.df.apply(
             lambda row: earth_r * np.cos(row['Latitude']) * np.cos(row['Longitude']),
@@ -83,6 +95,11 @@ class CountryCentroid:
             axis=1
         )
         return self.df[['X', 'Y', 'Z']].values
+
+    def remove_outliers_by_zscore(self):
+        self.df = self.df[
+            (np.abs(stats.zscore(self.df[['Longitude', 'Latitude']])) < 3).all(axis=1)
+        ]
 
     def plot_country(self, mode='2d'):
         if mode == '2d':
@@ -114,6 +131,8 @@ class CountryCentroid:
 
 if __name__ == '__main__':
     cc = CountryCentroid('world-cities-database.zip')
-    cc.set_country(country_id='cz')
+    cc.set_country(country_id='ir')
     cc.set_min_population(min_pop=10000)
-    cc.plot_country(mode='3d')
+    cc.remove_outliers_by_zscore()
+    cc.plot_country(mode='2d')
+
