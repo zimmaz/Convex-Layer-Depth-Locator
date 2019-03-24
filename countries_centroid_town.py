@@ -13,10 +13,11 @@ class CountryCentroid:
         self.set_country(cntry_id)
         self.set_min_population(min_pop=min_pop)
         if not _3d:
-            self.points = self.project_to_equirectangular()
+            self.towns = self.project_to_equirectangular()
         else:
-            self.points = self.project_to_cartesian()
+            self.towns = self.project_to_cartesian()
         self.vertices = None
+        self.cache = []
 
     def load_df(self):
         return pd.read_csv(
@@ -131,36 +132,64 @@ class CountryCentroid:
             )
 
     def scatter_towns(self):
-        plt.plot(self.points[:, 0], self.points[:, 1], 'o')
-
+        plt.plot(self.towns[:, 0], self.towns[:, 1], 'o')
 
     def make_convex_hull(self):
-        return ConvexHull(self.points)
+        return ConvexHull(self.towns)
 
     def set_vertices(self):
         setattr(self, 'vertices', self.make_convex_hull().vertices)
 
     def plot_convex_layer(self):
-        plt.plot(self.points[self.vertices, 0], self.points[self.vertices, 1], 'r--', lw=1)
+        plt.plot(self.towns[self.vertices, 0], self.towns[self.vertices, 1], 'r--', lw=1)
+        plt.plot(self.towns[self.vertices[0], 0], self.towns[self.vertices[0], 1], 'ro')
 
     def peel_outer_convex_layer(self):
-        self.points = np.delete(self.points, self.vertices.tolist(), 0)
+        self.cache.append(self.towns[self.vertices.tolist(), :])
+        self.towns = np.delete(self.towns, self.vertices.tolist(), 0)
         self.set_vertices()
 
-    def peel(self):
-        self.plot_convex_layer()
-        while self.points.shape[0] > 2:
+    def peel(self, plot=True):
+        if plot:
+            self.plot_convex_layer()
+        while self.towns.shape[0] > 2:
             try:
                 self.peel_outer_convex_layer()
-                self.plot_convex_layer()
-            except ValueError:
+                if plot:
+                    self.plot_convex_layer()
+            except Exception:
                 break
+
+        return self.towns
+
+    def find_center_of_dist(self):
+        pnts = self.peel(plot=False)
+        if len(pnts) == 1:
+            return self.df[
+                (self.df['X'] == pnts[0][0]) &
+                (self.df['Y'] == pnts[0][1])
+                ]
+        elif len(pnts) == 0:
+            self.df = self.df[
+                (self.df['X'].isin(self.cache[-1][:][:, 0])) &
+                (self.df['Y'].isin(self.cache[-1][:][:, 1]))
+                ]
+            return self.df.loc[
+                   self.df['Population'].idxmax(), :
+                   ]
+        else:
+            self.df = self.df[
+                (self.df['X'].isin(pnts[:][:, 0])) &
+                (self.df['Y'].isin(pnts[:][:, 1]))
+                ]
+            return self.df.loc[self.df['Population'].idxmax(), :]
 
 
 if __name__ == '__main__':
-    cc = CountryCentroid('world-cities-database.zip', cntry_id='ir', min_pop=10)
+    cc = CountryCentroid('world-cities-database.zip', cntry_id='ir', min_pop=0)
     cc.remove_outliers_by_zscore()
     cc.scatter_towns()
     cc.set_vertices()
     cc.peel()
     plt.show()
+    print(cc.find_center_of_dist())
