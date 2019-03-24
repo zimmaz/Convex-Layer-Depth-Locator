@@ -11,10 +11,8 @@ class CountryCentroid:
     """Class for finding the location of distribution (convex hull peeling depth)
     of a given county by means of recursive convex hull algorithm.
     More on : https://en.wikipedia.org/wiki/Convex_layers
-    Data set taken from https://www.kaggle.com/max-mind/world-cities-database
-
     Constructor arguments:
-    :param csv_file: data set containing the data for each location (can be compressed as well)
+    :param csv_file: data set containing the data for each location
     :param cntry_id: country ID in ISO 3166-1 alpha-2 format
     :param min_pop: minimum population of the towns that form the layer vertices
     :param _3d: If True, the country will be plotted in cartesian
@@ -202,8 +200,8 @@ class CountryCentroid:
             lw=1
         )
         plt.plot(
-            self.points[self.vertices, 0],
-            self.points[self.vertices, 1],
+            self.points[self.vertices[0], 0],
+            self.points[self.vertices[0], 1],
             'ro'
         )
 
