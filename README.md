@@ -1,6 +1,6 @@
 # Country Convex Layer Depth Locator
 
-Class for finding the convex hull peeling depth of a given county by means of a recursive convex hull algorithm.
+A Class for finding the convex hull peeling depth of a given country by means of a recursive convex hull algorithm.
     
 **More on**:
 
@@ -10,7 +10,7 @@ https://en.wikipedia.org/wiki/Convex_layers
 
 https://www.kaggle.com/max-mind/world-cities-database
 
-**Get the country codes from:**:
+**Get the country codes from**:
 
 https://en.wikipedia.org/wiki/ISO_3166-1_alpha-2
 
