@@ -10,6 +10,10 @@ https://en.wikipedia.org/wiki/Convex_layers
 
 https://www.kaggle.com/max-mind/world-cities-database
 
+**Get the country codes from:**:
+
+https://en.wikipedia.org/wiki/ISO_3166-1_alpha-2
+
 
 ## Example
 
